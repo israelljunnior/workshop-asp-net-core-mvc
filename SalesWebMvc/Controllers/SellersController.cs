@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -45,14 +46,13 @@ namespace SalesWebMvc.Controllers
         public IActionResult Delete(int? id)
         {
 
-            var obj = _validateIdSeller(id);
-
-            if (!(obj is Seller))
+            var result = _validateIdSeller(id);
+            if (!(result is Seller))
             {
-                return NotFound();
+                return result;
             }
 
-            return View(obj);
+            return View(result);
         }
 
         [HttpPost]
@@ -62,20 +62,15 @@ namespace SalesWebMvc.Controllers
             _sellerService.Remove(id);
             return RedirectToAction(nameof(Index));
         }
-
+            
         public IActionResult Details(int? id)
         { //dynamic para retornar mais de um valor
-            var obj = _validateIdSeller(id);
-
-            if (!(obj is Seller))
+            var result = _validateIdSeller(id);
+            if (!(result is Seller))
             {
-                return NotFound();
+                return result;
             }
-
-            List<Department> deparments = _departmentService.FindAll();
-            SellerFormViewModel viewModel = new SellerFormViewModel { Seller = obj, Departments = deparments };
-
-            return View(viewModel);
+            return View(result);
 
         }
 
@@ -83,9 +78,8 @@ namespace SalesWebMvc.Controllers
         { //dynamic para retornar mais de um valor
             var obj = _validateIdSeller(id);
 
-            if (!(obj is Seller))
-            {
-                return NotFound();
+            if (!(obj is Seller)) {
+                return obj;
             }
 
             List<Department> deparments = _departmentService.FindAll();
@@ -101,22 +95,24 @@ namespace SalesWebMvc.Controllers
         { //dynamic para retornar mais de um valor
             if (id != seller.Id)
             {
-                return BadRequest();
+                return RedirectToAction(nameof(Error), new { message = "Id mismatch" });
             }
             try
             {
                 _sellerService.Update(seller);
                 return RedirectToAction(nameof(Index));
             }
-            catch (NotFoundException)
+            catch (NotFoundException e)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = e.Message });
             }
-            catch (DBConcurrencyException)
+            catch (DBConcurrencyException e)
             {
-                return BadRequest();
+                return RedirectToAction(nameof(Error), new { message = e.Message });
             }
-
+            catch (ApplicationException e) {
+                return RedirectToAction(nameof(Error), new { message = e.Message });
+            }
         }
 
 
@@ -125,14 +121,24 @@ namespace SalesWebMvc.Controllers
         {
             if (id == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = "Id Not Provided" });
             }
             var obj = _sellerService.FindById(id.Value);
             if (obj == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = "Id Not Found" });
             }
             return obj;
+        }
+
+        public IActionResult Error(string message)
+        {
+            var viewModel = new ErrorViewModel
+            {
+                Message = message,
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            };
+            return View(viewModel);
         }
 
     }
