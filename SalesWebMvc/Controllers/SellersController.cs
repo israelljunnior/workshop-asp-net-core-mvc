@@ -22,31 +22,34 @@ namespace SalesWebMvc.Controllers
             _departmentService = departmentService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var list = _sellerService.FindAll();
+            var list = await _sellerService.FindAllAsync();
             return View(list);
         }
 
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            List<Department> departaments = _departmentService.FindAll();
-            var viewModel = new SellerFormViewModel { Departments = departaments };
-            return View(viewModel);
+
+            return  View(await createSellerFormViewModel(new Seller { }));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Seller seller)
+        public async Task<IActionResult> Create(Seller seller)
         {
-            _sellerService.Insert(seller);
+            if (!ModelState.IsValid)
+            {
+                return View(seller);
+            }
+            await _sellerService.InsertAsync(seller);
             return RedirectToAction(nameof(Index));
         }
 
-        public IActionResult Delete(int? id)
+        public async Task<IActionResult> Delete(int? id)
         {
 
-            var result = _validateIdSeller(id);
+            var result = await _validateIdSeller(id);
             if (!(result is Seller))
             {
                 return result;
@@ -57,15 +60,15 @@ namespace SalesWebMvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            _sellerService.Remove(id);
+            await _sellerService.RemoveAsync(id);
             return RedirectToAction(nameof(Index));
         }
-            
-        public IActionResult Details(int? id)
+
+        public async Task<IActionResult> Details(int? id)
         { //dynamic para retornar mais de um valor
-            var result = _validateIdSeller(id);
+            var result = await _validateIdSeller(id);
             if (!(result is Seller))
             {
                 return result;
@@ -74,24 +77,21 @@ namespace SalesWebMvc.Controllers
 
         }
 
-        public IActionResult Edit(int? id)
+        public async Task<IActionResult> Edit(int? id)
         { //dynamic para retornar mais de um valor
-            var obj = _validateIdSeller(id);
+            var obj = await _validateIdSeller(id);
 
-            if (!(obj is Seller)) {
+            if (!(obj is Seller))
+            {
                 return obj;
             }
-
-            List<Department> deparments = _departmentService.FindAll();
-            SellerFormViewModel viewModel = new SellerFormViewModel { Seller = obj, Departments = deparments };
-
-            return View(viewModel);
+            return View(createSellerFormViewModel(obj));
 
         }
 
         [HttpPost]
         [AutoValidateAntiforgeryToken]
-        public IActionResult Edit(int id, Seller seller)
+        public async Task<IActionResult> Edit(int id, Seller seller)
         { //dynamic para retornar mais de um valor
             if (id != seller.Id)
             {
@@ -99,7 +99,7 @@ namespace SalesWebMvc.Controllers
             }
             try
             {
-                _sellerService.Update(seller);
+                await _sellerService.UpdateAsync(seller);
                 return RedirectToAction(nameof(Index));
             }
             catch (NotFoundException e)
@@ -110,20 +110,34 @@ namespace SalesWebMvc.Controllers
             {
                 return RedirectToAction(nameof(Error), new { message = e.Message });
             }
-            catch (ApplicationException e) {
+            catch (ApplicationException e)
+            {
                 return RedirectToAction(nameof(Error), new { message = e.Message });
             }
         }
 
 
+        private async Task<SellerFormViewModel> createSellerFormViewModel(Seller obj)
+        {
+            List<Department> deparments = await _departmentService.FindAllAsync();
 
-        private dynamic _validateIdSeller(int? id)
+            if (obj != null)
+            {
+                SellerFormViewModel viewModel = new SellerFormViewModel { Seller = obj, Departments = deparments };
+                return viewModel;
+            }
+            else { 
+                SellerFormViewModel viewModel = new SellerFormViewModel {Departments = deparments };
+                return viewModel;
+            }
+        }
+        private async Task<dynamic> _validateIdSeller(int? id)
         {
             if (id == null)
             {
                 return RedirectToAction(nameof(Error), new { message = "Id Not Provided" });
             }
-            var obj = _sellerService.FindById(id.Value);
+            var obj = await _sellerService.FindByIdAsync(id.Value);
             if (obj == null)
             {
                 return RedirectToAction(nameof(Error), new { message = "Id Not Found" });
