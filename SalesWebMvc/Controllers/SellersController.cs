@@ -31,7 +31,7 @@ namespace SalesWebMvc.Controllers
         public async Task<IActionResult> Create()
         {
 
-            return  View(await createSellerFormViewModel(new Seller { }));
+            return  View(await CreateSellerFormViewModel(new Seller { }));
         }
 
         [HttpPost]
@@ -49,7 +49,7 @@ namespace SalesWebMvc.Controllers
         public async Task<IActionResult> Delete(int? id)
         {
 
-            var result = await _validateIdSeller(id);
+            var result = await ValidateIdSeller(id);
             if (!(result is Seller))
             {
                 return result;
@@ -73,7 +73,7 @@ namespace SalesWebMvc.Controllers
 
         public async Task<IActionResult> Details(int? id)
         { //dynamic para retornar mais de um valor
-            var result = await _validateIdSeller(id);
+            var result = await ValidateIdSeller(id);
             if (!(result is Seller))
             {
                 return result;
@@ -84,13 +84,13 @@ namespace SalesWebMvc.Controllers
 
         public async Task<IActionResult> Edit(int? id)
         { //dynamic para retornar mais de um valor
-            var obj = await _validateIdSeller(id);
+            var obj = await ValidateIdSeller(id);
 
             if (!(obj is Seller))
             {
                 return obj;
             }
-            return View(createSellerFormViewModel(obj));
+            return View(CreateSellerFormViewModel(obj));
 
         }
 
@@ -122,7 +122,7 @@ namespace SalesWebMvc.Controllers
         }
 
 
-        private async Task<SellerFormViewModel> createSellerFormViewModel(Seller obj)
+        private async Task<SellerFormViewModel> CreateSellerFormViewModel(Seller obj)
         {
             List<Department> deparments = await _departmentService.FindAllAsync();
 
@@ -136,7 +136,7 @@ namespace SalesWebMvc.Controllers
                 return viewModel;
             }
         }
-        private async Task<dynamic> _validateIdSeller(int? id)
+        private async Task<dynamic> ValidateIdSeller(int? id)
         {
             if (id == null)
             {
